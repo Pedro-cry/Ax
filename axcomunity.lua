@@ -51,4 +51,3 @@ autoClickButton.TouchTap:Connect(function()
         autoClickButton:SetText("Auto Clicker: Desativado")
     end
 end)
-

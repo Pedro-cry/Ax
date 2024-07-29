@@ -3,16 +3,10 @@ local Mercury = loadstring(game:HttpGet("https://raw.githubusercontent.com/deeei
 
 -- Criando a GUI
 local GUI = Mercury:Create{
-    Name = "MyInterface",
-    Size = UDim2.fromOffset(600, 400),
+    Name = "AutoClickerInterface",
+    Size = UDim2.fromOffset(200, 100),
     Theme = Mercury.Themes.Dark,
     Link = "https://github.com/deeeity/mercury-lib"
-}
-
--- Criando uma guia (tab)
-local Tab = GUI:Tab{
-    Name = "MyTab",
-    Icon = "rbxassetid://8569322835" -- Substitua pelo ID do ícone desejado
 }
 
 -- Variável local para controlar o auto clicker
@@ -32,17 +26,13 @@ local function autoRightClick()
     end
 end
 
--- Adicionando um botão à guia
-local autoClickButton = Tab:Button{
-    Name = "Auto Clicker: Desativado",
-    Description = "Ative ou desative o auto clicker",
-    Callback = function()
-        autoClicking = not autoClicking
-        if autoClicking then
-            autoClickButton:SetText("Auto Clicker: Ativado")
-            autoRightClick() -- Inicia o auto clicker
-        else
-            autoClickButton:SetText("Auto Clicker: Desativado")
-        end
+-- Criando um botão para ativar/desativar o auto clicker
+local autoClickButton = GUI:Button("Auto Clicker: Desativado", function()
+    autoClicking = not autoClicking
+    if autoClicking then
+        autoClickButton:SetText("Auto Clicker: Ativado")
+        autoRightClick() -- Inicia o auto clicker
+    else
+        autoClickButton:SetText("Auto Clicker: Desativado")
     end
-}
+end)

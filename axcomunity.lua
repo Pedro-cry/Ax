@@ -1,14 +1,6 @@
 -- Carregando a Biblioteca MercuryLib (substitua pelo link correto)
 local Mercury = loadstring(game:HttpGet("https://raw.githubusercontent.com/deeeity/mercury-lib/master/src.lua"))()
 
--- Criando a GUI
-local GUI = Mercury:Create{
-    Name = "AutoClickerInterface",
-    Size = UDim2.fromOffset(200, 100),
-    Theme = Mercury.Themes.Dark,
-    Link = "https://github.com/deeeity/mercury-lib"
-}
-
 -- Variável local para controlar o auto clicker
 local autoClicking = false
 local clickDelay = 0.1 -- Tempo entre os cliques (em segundos)
@@ -27,7 +19,14 @@ local function autoRightClick()
 end
 
 -- Criando um botão para ativar/desativar o auto clicker
-local autoClickButton = GUI:Button("Auto Clicker: Desativado", function()
+local autoClickButton = Mercury:Create{
+    Name = "AutoClickerButton",
+    Size = UDim2.fromOffset(200, 50),
+    Theme = Mercury.Themes.Dark,
+    Link = "https://github.com/deeeity/mercury-lib"
+}
+
+autoClickButton:Button("Auto Clicker: Desativado", function()
     autoClicking = not autoClicking
     if autoClicking then
         autoClickButton:SetText("Auto Clicker: Ativado")

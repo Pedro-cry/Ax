@@ -15,22 +15,34 @@ local Tab = GUI:Tab{
     Icon = "rbxassetid://8569322835" -- Substitua pelo ID do ícone desejado
 }
 
--- Adicionando um botão à guia
-Tab:Button{
-    Name = "MyButton",
-    Description = "Clique-me!",
-    Callback = function()
-        print("Botão clicado!")
-    end
-}
+-- Variável local para controlar o auto clicker
+local autoClicking = false
+local clickDelay = 0.1 -- Tempo entre os cliques (em segundos)
+local UserInputService = game:GetService("UserInputService")
 
--- Adicionando um slider à guia
-Tab:Slider{
-    Name = "MySlider",
-    Default = 50, -- Valor inicial
-    Min = 0, -- Valor mínimo
-    Max = 100, -- Valor máximo
-    Callback = function(value)
-        print("Valor do slider:", value)
+-- Função para clicar com o botão direito
+local function autoRightClick()
+    while autoClicking do
+        -- Simula o clique do botão direito do mouse
+        UserInputService.InputBegan:Fire({
+            UserInputType = Enum.UserInputType.MouseButton2,
+            Position = UserInputService:GetMouseLocation()
+        })
+        wait(clickDelay)
+    end
+end
+
+-- Adicionando um botão à guia
+local autoClickButton = Tab:Button{
+    Name = "Auto Clicker: Desativado",
+    Description = "Ative ou desative o auto clicker",
+    Callback = function()
+        autoClicking = not autoClicking
+        if autoClicking then
+            autoClickButton:SetText("Auto Clicker: Ativado")
+            autoRightClick() -- Inicia o auto clicker
+        else
+            autoClickButton:SetText("Auto Clicker: Desativado")
+        end
     end
 }

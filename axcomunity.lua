@@ -41,15 +41,14 @@ autoClickButton.MouseButton2Click:Connect(function()
     end
 end)
 
--- Função para o auto clicker
-function autoRightClick()
-    while autoClicking do
-        -- Simula o clique do botão direito do mouse
-        UserInputService.InputBegan:Fire({
-            UserInputType = Enum.UserInputType.MouseButton2,
-            Position = UserInputService:GetMouseLocation()
-        })
-        wait(clickDelay)
+-- Adicionando evento de toque (clique com o dedo)
+autoClickButton.TouchTap:Connect(function()
+    autoClicking = not autoClicking
+    if autoClicking then
+        autoClickButton:SetText("Auto Clicker: Ativado")
+        autoRightClick() -- Inicia o auto clicker
+    else
+        autoClickButton:SetText("Auto Clicker: Desativado")
     end
-end
+end)
 

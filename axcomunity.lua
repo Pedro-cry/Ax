@@ -42,7 +42,7 @@ local MainSection = MainTab:CreateSection("Main")
 
 local MainTab = Window:CreateTab("🗡️ Farm", nil)
 local MainSection = MainTab:CreateSection("Farm")
-            local RollbackButton = FarmTab:CreateButton({
+            local RollbackButton = MainTab:CreateButton({
     Name = "Rollback",
     Callback = function()
                     end,

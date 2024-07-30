@@ -29,43 +29,14 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("🏠 Home", nil)
 local MainSection = MainTab:CreateSection("Main")
 
-local backupData = nil
-local isRollbackActivated = false
-
--- Função para fazer o backup dos dados atuais
-local function BackupData()
-    backupData = game:GetService("DataStoreService"):GetGlobalDataStore():GetAsync("GameData")
-    print("Backup dos dados feito com sucesso!")
-end
-
--- Função para realizar o rollback
-local function PerformRollback()
-    if backupData then
-        game:GetService("DataStoreService"):GetGlobalDataStore():SetAsync("GameData", backupData)
-        print("Rollback realizado com sucesso!")
-    else
-        print("Não há backup disponível para realizar o rollback.")
-    end
-end
-
--- Criar botão no MainTab para ativar/desativar o rollback
+-- Criar botão no MainTab
 local RollbackButton = MainTab:CreateButton({
     Name = "Rollback",
     Callback = function()
-        if isRollbackActivated then
-            isRollbackActivated = false
-            print("Rollback desativado")
-        else
-            BackupData()
-            isRollbackActivated = true
-            print("Rollback ativado")
-        end
-    end
+    end,
 })
 
--- Adicionar a lógica de rollback ao finalizar e limpar os recursos quando a execução terminar
-game:BindToClose(function()
-    if isRollbackActivated then
-        PerformRollback()
-    end
-end)
+local MainTab = Window:CreateTab("🗡️ Farm", nil)
+local MainSection = MainTab:CreateSection("Farm")
+
+

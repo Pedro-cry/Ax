@@ -54,6 +54,11 @@ local MainSection = MainTab:CreateSection("Farm")
 end,
 })
 
+local MainTab = Window:CreateTab("🗡️ Farm", nil)
+local MainSection = MainTab:CreateSection("Farm")
+end,
+})
+
 
 
 

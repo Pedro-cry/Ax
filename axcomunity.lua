@@ -26,6 +26,23 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
+-- Values
+_G.autoTap = true
+
+
+
+
+-- Functions
+
+function autoTap 
+while _G.autoTap == true do
+   game:GetService("ReplicatedStorage").Bridge:FireServer("Attack","Click")
+wait(.0001)
+
+    end
+end
+
+--Tab Main
 local MainTab = Window:CreateTab("🏠 Home", nil)
 local MainSection = MainTab:CreateSection("Main")
 
@@ -35,9 +52,9 @@ local Toggle = MainTab:CreateToggle({
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
-   -- The function that takes place when the toggle is pressed
-   -- The variable (Value) is a boolean on whether the toggle is true or false
-   end,
+   _G.autoTap = Value
+   autoTap()
+    end,
 })            
 
 

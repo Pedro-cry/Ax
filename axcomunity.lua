@@ -30,9 +30,6 @@ local MainTab = Window:CreateTab("🏠 Home", nil)
 local MainSection = MainTab:CreateSection("Main")
 
 -- Criar botão no MainTab
-local RollbackButton = MainTab:CreateButton({
-    Name = "Rollback",
-    Callback = function()
             local Toggle = MainTab:CreateToggle({
    Name = "Toggle Example",
    CurrentValue = false,

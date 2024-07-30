@@ -34,7 +34,7 @@ _G.autoTap = true
 
 -- Functions
 
-function autoTap 
+function autoTap()
 while _G.autoTap == true do
    game:GetService("ReplicatedStorage").Bridge:FireServer("Attack","Click")
 wait(.0001)

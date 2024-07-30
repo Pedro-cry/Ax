@@ -1,4 +1,4 @@
--- Carregar a GUI e obter os serviços necessários
+-- UI OF THE KEY
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
     Name = "Anime Strike Simulator",
@@ -26,40 +26,25 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
--- Values
+--VALUES
 _G.autoTap = true
 
-
-
-
 -- Functions
-
-function autoTap()
-while _G.autoTap == true do
-   game:GetService("ReplicatedStorage").Bridge:FireServer("Attack","Click")
-wait(.0001)
-
-    end
+local function autoTap()
+    game:GetService("ReplicatedStorage").Bridge:FireServer("Attack","Click")
 end
-
---Tab Main
+-- Tab
 local MainTab = Window:CreateTab("🏠 Home", nil)
 local MainSection = MainTab:CreateSection("Main")
 
--- Criar botão no MainTab
 local Toggle = MainTab:CreateToggle({
    Name = "Auto Clicker",
    CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Flag = "Toggle1",
    Callback = function(Value)
-   _G.autoTap = Value
-   autoTap()
+    _G.autoTap = Value
+        while _G.autoTap do wait(0.1)
+            autoTap()
+        end
     end,
-})            
-
-
-local MainTab = Window:CreateTab("🗡️ Farm", nil)
-local MainSection = MainTab:CreateSection("Farm")
-            
-
-
+})

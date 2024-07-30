@@ -1,27 +1,71 @@
+-- Carregar a GUI e obter os serviços necessários
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
 local Window = Rayfield:CreateWindow({
-   Name = "Anime strike simulator",
-   LoadingTitle = "Ax Community",
-   LoadingSubtitle = "by Ax",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil, -- Create a custom folder for your hub/game
-      FileName = "Ax Hub"
-   },
-   Discord = {
-      Enabled = true,
-      Invite = "EuGGNvkZ", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ABCD would be ABCD
-      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
-   },
-   KeySystem = true, -- Set this to true to use our key system
-   KeySettings = {
-      Title = "Anime Strike Simulator",
-      Subtitle = "Link In Discord Server",
-      Note = "Join Server From Misc Tab",
-      FileName = "AxHub", -- É recomendado usar algo exclusivo, pois outros scripts que usam Rayfield podem substituir seu arquivo de chave
-      SaveKey = true, -- A chave do usuário será salva, mas se você alterar a chave, ele não poderá usar seu script
-      GrabKeyFromSite = true, -- Se isso for verdade, defina Key abaixo para o site RAW do qual você gostaria que Rayfield obtivesse a chave
-      Key = {"https://raw.githubusercontent.com/Pedro-cry/Ax/main/AxHub"} -- Lista de chaves que serão aceitas pelo sistema, podem ser links de arquivos RAW (pastebin, github etc) ou strings simples ("hello","key22")
-   }
+    Name = "Anime Strike Simulator",
+    LoadingTitle = "Ax Community",
+    LoadingSubtitle = "by Ax",
+    ConfigurationSaving = {
+        Enabled = false,
+        FolderName = nil,
+        FileName = "Ax Hub"
+    },
+    Discord = {
+        Enabled = true,
+        Invite = "EuGGNvkZ",
+        RememberJoins = true
+    },
+    KeySystem = true,
+    KeySettings = {
+        Title = "Anime Strike Simulator",
+        Subtitle = "Link In Discord Server",
+        Note = "Join Server From Misc Tab",
+        FileName = "AxHub",
+        SaveKey = true,
+        GrabKeyFromSite = true,
+        Key = {"https://raw.githubusercontent.com/Pedro-cry/Ax/main/AxHub"}
+    }
 })
+
+local MainTab = Window:CreateTab("🏠 Home", nil)
+local MainSection = MainTab:CreateSection("Main")
+
+local backupData = nil
+local isRollbackActivated = false
+
+-- Função para fazer o backup dos dados atuais
+local function BackupData()
+    backupData = game:GetService("DataStoreService"):GetGlobalDataStore():GetAsync("GameData")
+    print("Backup dos dados feito com sucesso!")
+end
+
+-- Função para realizar o rollback
+local function PerformRollback()
+    if backupData then
+        game:GetService("DataStoreService"):GetGlobalDataStore():SetAsync("GameData", backupData)
+        print("Rollback realizado com sucesso!")
+    else
+        print("Não há backup disponível para realizar o rollback.")
+    end
+end
+
+-- Criar botão no MainTab para ativar/desativar o rollback
+local RollbackButton = MainTab:CreateButton({
+    Name = "Rollback",
+    Callback = function()
+        if isRollbackActivated then
+            isRollbackActivated = false
+            print("Rollback desativado")
+        else
+            BackupData()
+            isRollbackActivated = true
+            print("Rollback ativado")
+        end
+    end
+})
+
+-- Adicionar a lógica de rollback ao finalizar e limpar os recursos quando a execução terminar
+game:BindToClose(function()
+    if isRollbackActivated then
+        PerformRollback()
+    end
+end)

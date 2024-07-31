@@ -1,19 +1,17 @@
-local HashLibrary = loadstring(game.HttpGet("https://raw.githubusercontent.com/Egor-Skriptunoff/pure_lua_SHA/master/sha2.lua"))()
-local KeyLibrary = loadstring(game.HttpGet("https://raw.githubusercontent.com/MaGiXxScripter0/keysystemv2api/master/version2_1.lua"))()
+-- KEY SYSTEM V2 UI LIBRARY:
+-- UI by mr.xrer | Code by mstudio45
 
-KeyLibrary.Set({
-    ApplicationName = "app_name",
-    AuthType = "clientid",
-    EncryptionKey = "any data",
-    TrueData = "any data",
-    FalseData = "any data",
+local KeySystemUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/MaGiXxScripter0/keysystemv2api/master/ui/xrer_mstudio45.lua"))()
+KeySystemUI.New({
+    ApplicationName = "", -- Your Key System Application Name
+    Name = "", -- Your Script name
+    Info = "", -- Info text in the GUI, keep empty for default text.
+    DiscordInvite = "", -- Optional.
+    AuthType = "clientid" -- Can select verification with ClientId or IP ("clientid" or "ip")
 })
-
-local o_data = KeyLibrary.VerifyKey("keystring")
-local _, decrypted_data = KeyLibrary.XORDecode(o_data)
-local newhash = HashLibrary.sha1("YourTrueData")
-if newhash == decrypted_data then
-    warn("Key is a valid key !")
+repeat task.wait() until KeySystemUI.Finished() or KeySystemUI.Closed
+if KeySystemUI.Finished() and KeySystemUI.Closed == false then
+    print("Key verified, can load script")
 else
-    warn("Key is non-valid !")
+    print("Player closed the GUI.")
 end

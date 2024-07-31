@@ -54,8 +54,8 @@ local MainSection = MainTab:CreateSection("Farm")
 end,
 })
 
-local MainTab = Window:CreateTab("🗡️ Farm", nil)
-local MainSection = MainTab:CreateSection("Farm")
+local MainTab = Window:CreateTab("⛏️Gamemodes", nil)
+local MainSection = MainTab:CreateSection("Gamemode")
 end,
 })
 

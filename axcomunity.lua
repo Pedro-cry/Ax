@@ -1,4 +1,5 @@
 -- UI OF THE KEY
+if game.PlaceId == 18401171146 then
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
     Name = "Anime Strike Simulator",

@@ -48,17 +48,3 @@ local Toggle = MainTab:CreateToggle({
         end
     end,
 })
-
-local MainTab = Window:CreateTab("🗡️ Farm", nil)
-local MainSection = MainTab:CreateSection("Farm")
-end,
-})
-
-local MainTab = Window:CreateTab("⛏️Gamemodes", nil)
-local MainSection = MainTab:CreateSection("Gamemode")
-end,
-})
-
-
-
-

@@ -1,5 +1,3 @@
--- UI OF THE KEY
-if game.PlaceId == 18401171146 then
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
     Name = "Anime Strike Simulator",
@@ -27,14 +25,12 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
---VALUES
-_G.autoTap = true
+_G.autoTap
 
--- Functions
 local function autoTap()
     game:GetService("ReplicatedStorage").Bridge:FireServer("Attack","Click")
 end
--- Tab
+
 local MainTab = Window:CreateTab("🏠 Home", nil)
 local MainSection = MainTab:CreateSection("Main")
 

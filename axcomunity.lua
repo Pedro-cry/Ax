@@ -5,7 +5,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "Annie Hub",
    LoadingTitle = "Annie Hub - Carregando...",
-   LoadingSubtitle = "Sistema de Farm Simples",
+   LoadingSubtitle = "Farm Específico v2.0",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "AnnieHubConfig",
@@ -13,11 +13,22 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
--- Variáveis globais otimizadas
+-- Variáveis globais
 local NPCList = {}
 local SelectedNPCs = {}
 local isFarming = false
-local attackCooldown = 2 -- Valor padrão mais seguro (2 segundos)
+local attackCooldown = 2 -- Valor padrão seguro
+
+-- Dicionário para verificação rápida
+local SelectedNPCDict = {}
+
+-- Função para atualizar o dicionário de NPCs selecionados
+local function updateSelectedDict()
+    SelectedNPCDict = {}
+    for _, name in ipairs(SelectedNPCs) do
+        SelectedNPCDict[name] = true
+    end
+end
 
 -- Função otimizada para verificar NPCs próximos
 local function refreshNPCList()
@@ -34,7 +45,7 @@ local function refreshNPCList()
     for _, npc in ipairs(attackables:GetChildren()) do
         if npc:FindFirstChild("HumanoidRootPart") then
             local distance = (npc.HumanoidRootPart.Position - playerPos).Magnitude
-            if distance <= 200 then -- Raio aumentado para 200 unidades
+            if distance <= 200 then
                 tempList[npc.Name] = true
             end
         end
@@ -47,75 +58,71 @@ local function refreshNPCList()
     table.sort(NPCList)
 end
 
--- Função de teleporte segura
-local function safeTeleport(npc)
-    if not npc or not npc.Parent then return false end
+-- Função de teleporte e ataque seguros
+local function attackSelectedNPC(npc)
+    -- Verifica se o NPC está na lista selecionada
+    if not SelectedNPCDict[npc.Name] then return false end
     
-    local humanoidRoot = npc:FindFirstChild("HumanoidRootPart")
-    if not humanoidRoot then return false end
-    
+    -- Teleporte seguro
     local char = game.Players.LocalPlayer.Character
     if not char then return false end
     
-    local myRoot = char:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return false end
+    local humanoidRoot = char:FindFirstChild("HumanoidRootPart")
+    if not humanoidRoot then return false end
     
-    -- Teleporte com proteção contra erro
     local success = pcall(function()
-        myRoot.CFrame = humanoidRoot.CFrame * CFrame.new(0, 0, 3) -- Distância aumentada
+        humanoidRoot.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
     end)
     
-    return success
+    if success then
+        -- ATAQUE PERSONALIZADO (substitua pelo seu método)
+        print("[FARM] Atacando: "..npc.Name)
+        -- Exemplo: ativar habilidades ou usar armas específicas
+        
+        -- Verifica se o NPC morreu
+        local humanoid = npc:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health <= 0 then
+            return true -- NPC morto
+        end
+    end
+    
+    return false
 end
 
--- Loop de farm otimizado
+-- Loop de farm otimizado e específico
 local function farmLoop()
     while isFarming do
-        -- Verificação de segurança
-        if not game.Players.LocalPlayer.Character then
-            task.wait(1)
-            continue
-        end
-
-        -- Atualiza a lista de NPCs selecionados
-        local currentNPCs = {}
-        for _, name in ipairs(SelectedNPCs) do
-            currentNPCs[name] = true
-        end
-
+        -- Atualiza a lista de selecionados
+        updateSelectedDict()
+        
         local attackables = workspace:FindFirstChild("_attackables")
         if not attackables then
             task.wait(1)
             continue
         end
 
-        -- Processa cada NPC na área
-        for _, npc in ipairs(attackables:GetChildren()) do
+        -- Foca apenas nos NPCs selecionados
+        for _, npcName in ipairs(SelectedNPCs) do
             if not isFarming then break end
             
-            if currentNPCs[npc.Name] and npc:FindFirstChild("HumanoidRootPart") then
-                -- Teleporta para o NPC
-                if safeTeleport(npc) then
-                    -- Implemente seu ataque aqui (substitua pelo seu método)
-                    print("Atacando:", npc.Name)
-                    
-                    -- Delay configurável entre ações
-                    task.wait(attackCooldown)
-                end
+            local npc = attackables:FindFirstChild(npcName)
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                -- Ataca apenas NPCs selecionados
+                attackSelectedNPC(npc)
+                task.wait(attackCooldown)
             end
         end
         
-        -- Pequeno delay entre ciclos
-        task.wait(0.5)
+        task.wait(0.3) -- Delay entre ciclos
     end
 end
 
 -- Cria a aba principal
-local MainTab = Window:CreateTab("Farm Automático", "sword")
+local MainTab = Window:CreateTab("Farm Específico", "sword")
 
--- Controle principal de farm
+-- Controle principal
 MainTab:CreateToggle({
-   Name = "Ativar Farm Automático",
+   Name = "Ativar Farm Específico",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
    Callback = function(Value)
@@ -133,20 +140,20 @@ MainTab:CreateToggle({
               return
           end
           
+          updateSelectedDict()
           Rayfield:Notify({
-              Title = "Farm Ativado",
-              Content = "Iniciando ataque aos NPCs selecionados",
+              Title = "Farm Específico Ativado",
+              Content = "Atacando apenas "..#SelectedNPCs.." NPCs selecionados",
               Duration = 3,
               Image = "zap"
           })
           
-          -- Inicia o farm em uma nova thread
           coroutine.wrap(farmLoop)()
       else
           Rayfield:Notify({
               Title = "Farm Desativado",
-              Content = "Farm automático parado",
-              Duration = 3,
+              Content = "Interrompido pelo usuário",
+              Duration = 2,
               Image = "square"
           })
       end
@@ -155,26 +162,27 @@ MainTab:CreateToggle({
 
 -- Seletor de NPCs
 local NPCDropdown = MainTab:CreateDropdown({
-   Name = "NPCs para Farmear",
+   Name = "Selecionar NPCs Alvo",
    Options = {},
    CurrentOption = {},
    MultipleOptions = true,
    Flag = "NPCSelection",
    Callback = function(Options)
       SelectedNPCs = Options
+      updateSelectedDict()
    end,
 })
 
 -- Botão de atualização
 MainTab:CreateButton({
-   Name = "Atualizar Lista de NPCs",
+   Name = "↻ Atualizar Lista",
    Callback = function()
       refreshNPCList()
       NPCDropdown:Refresh(NPCList)
       Rayfield:Notify({
-         Title = "Lista Atualizada",
-         Content = #NPCList.." NPCs encontrados próximos",
-         Duration = 2.5,
+         Title = "NPCs Atualizados",
+         Content = #NPCList.." NPCs disponíveis na área",
+         Duration = 2,
          Image = "refresh-cw"
       })
    end,
@@ -182,8 +190,8 @@ MainTab:CreateButton({
 
 -- Controle de velocidade
 MainTab:CreateSlider({
-   Name = "Velocidade de Farm (1-3s)",
-   Range = {1, 3}, -- Limite de 1 a 3 segundos
+   Name = "Velocidade (1-3 segundos)",
+   Range = {1, 3},
    Increment = 0.1,
    Suffix = "segundos",
    CurrentValue = attackCooldown,
@@ -193,19 +201,19 @@ MainTab:CreateSlider({
    end,
 })
 
--- Atualiza a lista inicial
+-- Atualizações iniciais
 refreshNPCList()
 NPCDropdown:Refresh(NPCList)
 
 -- Aba de informações
-local InfoTab = Window:CreateTab("Informações", "info")
+local InfoTab = Window:CreateTab("Configurações", "settings")
 
 InfoTab:CreateParagraph({
-    Title = "Instruções de Uso",
-    Content = "1. Atualize a lista de NPCs\n2. Selecione os alvos\n3. Ajuste a velocidade\n4. Ative o Farm Automático"
+    Title = "Como Usar:",
+    Content = "1. Atualize a lista\n2. Selecione os NPCs\n3. Ajuste a velocidade\n4. Ative o Farm"
 })
 
-InfoTab:CreateLabel("Versão 1.0 - Sistema Estável")
+InfoTab:CreateLabel("Farm Específico v2.0 - Annie Hub")
 
--- Inicializa a GUI
+-- Inicializa
 Rayfield:LoadConfiguration()

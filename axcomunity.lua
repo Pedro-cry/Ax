@@ -3,95 +3,96 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Cria a janela principal
 local Window = Rayfield:CreateWindow({
-   Name = "Auto Teleport NPCs",
-   LoadingTitle = "Carregando Interface...",
-   LoadingSubtitle = "Teleporte Automático",
+   Name = "Annie Hubs",
+   LoadingTitle = "Carregando...",
+   LoadingSubtitle = "Versão 2.0",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "AutoTeleportConfig",
+      FolderName = "NPCFarmerConfig",
       FileName = "Settings"
    }
 })
 
--- Cria a aba Farm
-local FarmTab = Window:CreateTab("Farm", "sword") -- Ícone de espada (Lucide Icons)
+-- Variáveis globais
+local NPCList = {}
+local SelectedNPCs = {}
+local isFarming = false
+local attackDelay = 1
+local teleportDelay = 1.5
 
--- Seção de Teleporte Automático
-local TeleportSection = FarmTab:CreateSection("Teleporte entre NPCs")
-
--- Lista de NPCs para teleportar
-local NPCs = {
-    "_kizaru",
-    "_marine1",
-    "_aokiji",
-    "_marine3",
-    "_akainu"
-}
-
--- Variáveis de controle
-local isTeleporting = false
-local currentNPCIndex = 1
-local teleportDelay = 1.5 -- segundos
-
--- Função principal de teleporte
-local function teleportToNextNPC()
-    if not isTeleporting then return end
-    
-    local npcName = NPCs[currentNPCIndex]
-    
-    -- Substitua esta parte pela lógica real de teleporte do seu jogo
-    print("Teleportando para: "..npcName)
-    
-    -- Simulação do teleporte (substitua pelo código real)
+-- Função para atualizar a lista de NPCs
+local function refreshNPCList()
     local attackablesFolder = workspace:FindFirstChild("_attackables")
-    if attackablesFolder then
-        local npc = attackablesFolder:FindFirstChild(npcName)
-        if npc and npc:FindFirstChild("HumanoidRootPart") then
-            game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+    if not attackablesFolder then return end
+    
+    NPCList = {}
+    for _, npc in ipairs(attackablesFolder:GetChildren()) do
+        if npc:FindFirstChild("HumanoidRootPart") then
+            table.insert(NPCList, npc.Name)
         end
     end
     
-    -- Atualiza o índice para o próximo NPC
-    currentNPCIndex = currentNPCIndex + 1
-    if currentNPCIndex > #NPCs then
-        currentNPCIndex = 1
+    -- Remove duplicatas
+    local uniqueNPCs = {}
+    for _, name in ipairs(NPCList) do
+        uniqueNPCs[name] = true
+    end
+    NPCList = {}
+    for name in pairs(uniqueNPCs) do
+        table.insert(NPCList, name)
     end
     
-    -- Agenda o próximo teleporte
-    if isTeleporting then
-        task.delay(teleportDelay, teleportToNextNPC)
-    end
+    table.sort(NPCList)
 end
 
--- Toggle para iniciar/parar o teleporte
-local TeleportToggle = FarmTab:CreateToggle({
-   Name = "Iniciar Teleporte Automático",
-   CurrentValue = false,
-   Flag = "AutoTeleportToggle",
-   Callback = function(Value)
-      isTeleporting = Value
-      if Value then
-          Rayfield:Notify({
-              Title = "Teleporte Iniciado",
-              Content = "Teleportando entre NPCs automaticamente",
-              Duration = 3,
-              Image = "check-circle"
-          })
-          teleportToNextNPC()
-      else
-          Rayfield:Notify({
-              Title = "Teleporte Parado",
-              Content = "Teleporte automático desativado",
-              Duration = 3,
-              Image = "x-circle"
-          })
-      end
+-- Cria a aba principal
+local MainTab = Window:CreateTab("Farm NPCs", "sword")
+
+-- Seção de configuração
+local ConfigSection = MainTab:CreateSection("Configurações")
+
+-- Dropdown para seleção de NPCs
+local NPCDropdown = MainTab:CreateDropdown({
+   Name = "NPCs Disponíveis",
+   Options = {},
+   CurrentOption = {},
+   MultipleOptions = true,
+   Flag = "NPCSelection",
+   Callback = function(Options)
+      SelectedNPCs = Options
    end,
 })
 
--- Seletor de velocidade
-local DelaySlider = FarmTab:CreateSlider({
-   Name = "Intervalo entre Teleportes",
+-- Botão para atualizar a lista
+MainTab:CreateButton({
+   Name = "Refresh NPCs",
+   Callback = function()
+      refreshNPCList()
+      NPCDropdown:Refresh(NPCList)
+      Rayfield:Notify({
+         Title = "NPCs Atualizados",
+         Content = #NPCList.." NPCs encontrados",
+         Duration = 3,
+         Image = "refresh-cw"
+      })
+   end,
+})
+
+-- Controles de tempo
+MainTab:CreateSlider({
+   Name = "Atraso entre Ataques",
+   Range = {0.5, 5},
+   Increment = 0.1,
+   Suffix = "segundos",
+   CurrentValue = attackDelay,
+   Flag = "AttackDelay",
+   Callback = function(Value)
+      attackDelay = Value
+   end,
+})
+
+MainTab:CreateSlider({
+   Name = "Atraso entre Teleportes",
    Range = {0.5, 5},
    Increment = 0.1,
    Suffix = "segundos",
@@ -102,45 +103,99 @@ local DelaySlider = FarmTab:CreateSlider({
    end,
 })
 
--- Seção de NPCs
-local NPCSection = FarmTab:CreateSection("NPCs Selecionados")
+-- Função para atacar um NPC
+local function attackNPC(npc)
+    -- Implemente seu sistema de ataque aqui
+    print("Atacando: "..npc.Name)
+    -- Exemplo: ativar habilidades, usar armas, etc.
+end
 
--- Dropdown para selecionar NPCs
-local NPCDropdown = FarmTab:CreateDropdown({
-   Name = "Ordem dos NPCs",
-   Options = NPCs,
-   CurrentOption = NPCs,
-   MultipleOptions = true,
-   Flag = "NPCSelection",
-   Callback = function(Options)
-      NPCs = Options
-      currentNPCIndex = 1
+-- Função para teleportar até um NPC
+local function teleportToNPC(npc)
+    if not npc or not npc:FindFirstChild("HumanoidRootPart") then return false end
+    
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        return true
+    end
+    return false
+end
+
+-- Loop principal de farm
+local function farmLoop()
+    while isFarming and #SelectedNPCs > 0 do
+        local attackables = workspace:FindFirstChild("_attackables")
+        if not attackables then break end
+        
+        for _, npcName in ipairs(SelectedNPCs) do
+            if not isFarming then break end
+            
+            local npc = attackables:FindFirstChild(npcName)
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                -- Teleporta e ataca
+                if teleportToNPC(npc) then
+                    attackNPC(npc)
+                    task.wait(attackDelay)
+                end
+                task.wait(teleportDelay)
+            end
+        end
+    end
+end
+
+-- Seção de controle
+local ControlSection = MainTab:CreateSection("Controle")
+
+-- Toggle para iniciar/parar o farm
+MainTab:CreateToggle({
+   Name = "Iniciar Farm Automático",
+   CurrentValue = false,
+   Flag = "AutoFarmToggle",
+   Callback = function(Value)
+      isFarming = Value
+      if Value then
+          if #SelectedNPCs == 0 then
+              Rayfield:Notify({
+                  Title = "Erro",
+                  Content = "Selecione pelo menos 1 NPC!",
+                  Duration = 3,
+                  Image = "alert-triangle"
+              })
+              isFarming = false
+              return
+          end
+          
+          Rayfield:Notify({
+              Title = "Farm Iniciado",
+              Content = "Atacando "..#SelectedNPCs.." NPCs",
+              Duration = 3,
+              Image = "zap"
+          })
+          
+          -- Inicia o farm em uma nova thread
+          coroutine.wrap(farmLoop)()
+      else
+          Rayfield:Notify({
+              Title = "Farm Parado",
+              Content = "Farm automático desativado",
+              Duration = 3,
+              Image = "square"
+          })
+      end
    end,
 })
 
--- Botão para resetar a ordem
-FarmTab:CreateButton({
-   Name = "Resetar Ordem",
-   Callback = function()
-      currentNPCIndex = 1
-      Rayfield:Notify({
-         Title = "Ordem Resetada",
-         Content = "Voltando para o primeiro NPC",
-         Duration = 2,
-         Image = "rotate-ccw"
-      })
-   end,
+-- Atualiza a lista inicial
+refreshNPCList()
+NPCDropdown:Refresh(NPCList)
+
+-- Aba de informações
+local InfoTab = Window:CreateTab("Informações", "info")
+
+InfoTab:CreateParagraph({
+    Title = "Instruções de Uso",
+    Content = "1. Clique em 'Refresh NPCs' para carregar os NPCs disponíveis\n2. Selecione os NPCs que deseja atacar\n3. Ajuste os tempos de ataque/teleporte\n4. Ative o Farm Automático"
 })
 
--- Aba Misc (opcional)
-local MiscTab = Window:CreateTab("Misc", "settings")
-
-MiscTab:CreateSection("Configurações Adicionais")
-
--- Botão para fechar a interface
-MiscTab:CreateButton({
-   Name = "Fechar Interface",
-   Callback = function()
-      Rayfield:Destroy()
-   end,
-})
+InfoTab:CreateLabel("Versão 2.0 - Advanced NPC Farmer")

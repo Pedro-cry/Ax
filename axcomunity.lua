@@ -3,12 +3,12 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Cria a janela principal
 local Window = Rayfield:CreateWindow({
-   Name = "Advanced Auto Farm",
-   LoadingTitle = "Carregando Sistema Avançado...",
-   LoadingSubtitle = "By: SeuNome",
+   Name = "Advanced NPC Farmer",
+   LoadingTitle = "Carregando Sistema de Farm...",
+   LoadingSubtitle = "Versão 4.0",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "AdvancedAutoFarmConfig",
+      FolderName = "NPCFarmerConfig",
       FileName = "Settings"
    }
 })
@@ -18,8 +18,8 @@ local NPCList = {}
 local SelectedNPCs = {}
 local isFarming = false
 local currentTarget = nil
-local attackCooldown = 1
-local checkDistance = 100 -- Distância máxima para considerar NPCs próximos
+local attackCooldown = 0.5
+local teleportMode = "Fast" -- "Fast" ou "OnKill"
 
 -- Função para verificar NPCs na área atual
 local function refreshNPCList()
@@ -37,7 +37,7 @@ local function refreshNPCList()
     for _, npc in ipairs(attackablesFolder:GetChildren()) do
         if npc:FindFirstChild("HumanoidRootPart") then
             local distance = (npc.HumanoidRootPart.Position - playerPos).Magnitude
-            if distance <= checkDistance then
+            if distance <= 150 then -- Raio de 150 unidades
                 table.insert(NPCList, npc.Name)
             end
         end
@@ -65,7 +65,6 @@ end
 local function attackNPC(npc)
     -- Implemente seu sistema de ataque aqui
     print("Atacando: "..npc.Name)
-    -- Exemplo: ativar habilidades, usar armas, etc.
     -- Retorna true se o NPC morreu
     return isNPCDead(npc)
 end
@@ -82,8 +81,29 @@ local function teleportToNPC(npc)
     return false
 end
 
--- Loop principal de farm
-local function farmLoop()
+-- Loop principal de farm (modo rápido)
+local function fastFarmLoop()
+    while isFarming and #SelectedNPCs > 0 do
+        local attackables = workspace:FindFirstChild("_attackables")
+        if not attackables then break end
+        
+        for _, npcName in ipairs(SelectedNPCs) do
+            if not isFarming then break end
+            
+            local npc = attackables:FindFirstChild(npcName)
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                currentTarget = npc
+                teleportToNPC(npc)
+                attackNPC(npc)
+                task.wait(attackCooldown)
+            end
+        end
+    end
+    currentTarget = nil
+end
+
+-- Loop principal de farm (modo OnKill)
+local function onKillFarmLoop()
     while isFarming and #SelectedNPCs > 0 do
         local attackables = workspace:FindFirstChild("_attackables")
         if not attackables then break end
@@ -108,21 +128,22 @@ local function farmLoop()
                 end
             end
         end
-        task.wait(0.5) -- Pequeno delay entre ciclos
     end
     currentTarget = nil
 end
 
--- Cria a aba de Farm
-local FarmTab = Window:CreateTab("Farm NPCs", "sword")
+-- Cria a aba principal
+local MainTab = Window:CreateTab("Farm NPCs", "sword")
 
--- Botão para iniciar/parar o farm (AGORA NO TOPO)
-FarmTab:CreateToggle({
-   Name = "INICIAR FARM AUTOMÁTICO",
+-- Botão para iniciar/parar o farm (modo rápido)
+MainTab:CreateToggle({
+   Name = "FARM RÁPIDO (Teleporte Contínuo)",
    CurrentValue = false,
-   Flag = "AutoFarmToggle",
+   Flag = "FastFarmToggle",
    Callback = function(Value)
       isFarming = Value
+      teleportMode = "Fast"
+      
       if Value then
           if #SelectedNPCs == 0 then
               Rayfield:Notify({
@@ -136,14 +157,13 @@ FarmTab:CreateToggle({
           end
           
           Rayfield:Notify({
-              Title = "Farm Iniciado",
-              Content = "Atacando "..#SelectedNPCs.." NPCs",
+              Title = "Farm Rápido Iniciado",
+              Content = "Teleportando entre "..#SelectedNPCs.." NPCs",
               Duration = 3,
               Image = "zap"
           })
           
-          -- Inicia o farm em uma nova thread
-          coroutine.wrap(farmLoop)()
+          coroutine.wrap(fastFarmLoop)()
       else
           Rayfield:Notify({
               Title = "Farm Parado",
@@ -155,8 +175,48 @@ FarmTab:CreateToggle({
    end,
 })
 
--- Dropdown para seleção de NPCs (AGORA ABAIXO DO BOTÃO INICIAR)
-local NPCDropdown = FarmTab:CreateDropdown({
+-- Botão para iniciar/parar o farm (modo OnKill)
+MainTab:CreateToggle({
+   Name = "FARM PRECISO (Teleporte ao Matar)",
+   CurrentValue = false,
+   Flag = "PreciseFarmToggle",
+   Callback = function(Value)
+      isFarming = Value
+      teleportMode = "OnKill"
+      
+      if Value then
+          if #SelectedNPCs == 0 then
+              Rayfield:Notify({
+                  Title = "Erro",
+                  Content = "Selecione pelo menos 1 NPC!",
+                  Duration = 3,
+                  Image = "alert-triangle"
+              })
+              isFarming = false
+              return
+          end
+          
+          Rayfield:Notify({
+              Title = "Farm Preciso Iniciado",
+              Content = "Atacando "..#SelectedNPCs.." NPCs (teleporte ao matar)",
+              Duration = 3,
+              Image = "zap"
+          })
+          
+          coroutine.wrap(onKillFarmLoop)()
+      else
+          Rayfield:Notify({
+              Title = "Farm Parado",
+              Content = "Farm automático desativado",
+              Duration = 3,
+              Image = "square"
+          })
+      end
+   end,
+})
+
+-- Dropdown para seleção de NPCs
+local NPCDropdown = MainTab:CreateDropdown({
    Name = "NPCs Próximos",
    Options = {},
    CurrentOption = {},
@@ -168,7 +228,7 @@ local NPCDropdown = FarmTab:CreateDropdown({
 })
 
 -- Botão para atualizar a lista
-FarmTab:CreateButton({
+MainTab:CreateButton({
    Name = "Atualizar Lista de NPCs",
    Callback = function()
       refreshNPCList()
@@ -182,150 +242,29 @@ FarmTab:CreateButton({
    end,
 })
 
--- Controle de cooldown de ataque
-FarmTab:CreateSlider({
-   Name = "Intervalo entre Ataques",
-   Range = {0.5, 5},
+-- Controle de velocidade de ataque
+MainTab:CreateSlider({
+   Name = "Velocidade de Ataque",
+   Range = {0.1, 2},
    Increment = 0.1,
    Suffix = "segundos",
    CurrentValue = attackCooldown,
-   Flag = "AttackCooldown",
+   Flag = "AttackSpeed",
    Callback = function(Value)
       attackCooldown = Value
    end,
 })
 
--- Aba de Eggs
-local EggsTab = Window:CreateTab("Auto Eggs", "egg")
-
--- Variáveis para eggs
-local EggList = {}
-local SelectedEggs = {}
-local isOpeningEggs = false
-
--- Função para atualizar lista de eggs
-local function refreshEggList()
-    local interactsFolder = workspace:FindFirstChild("_interacts")
-    if not interactsFolder then return end
-    
-    local eggsFolder = interactsFolder:FindFirstChild("_eggs")
-    if not eggsFolder then return end
-    
-    EggList = {}
-    for _, egg in ipairs(eggsFolder:GetChildren()) do
-        table.insert(EggList, egg.Name)
-    end
-    
-    table.sort(EggList)
-end
-
--- Função para abrir eggs
-local function openEggsLoop()
-    while isOpeningEggs and #SelectedEggs > 0 do
-        local interactsFolder = workspace:FindFirstChild("_interacts")
-        if not interactsFolder then break end
-        
-        local eggsFolder = interactsFolder:FindFirstChild("_eggs")
-        if not eggsFolder then break end
-        
-        for _, eggName in ipairs(SelectedEggs) do
-            if not isOpeningEggs then break end
-            
-            local egg = eggsFolder:FindFirstChild(eggName)
-            if egg then
-                -- Implemente a lógica para abrir o egg aqui
-                print("Abrindo egg: "..egg.Name)
-                -- Exemplo: fireclickdetector, remoteevent, etc.
-                
-                task.wait(0.5) -- Delay entre eggs
-            end
-        end
-        task.wait(0.5) -- Pequeno delay entre ciclos
-    end
-end
-
--- Dropdown para seleção de eggs
-local EggDropdown = EggsTab:CreateDropdown({
-   Name = "Eggs Disponíveis",
-   Options = {},
-   CurrentOption = {},
-   MultipleOptions = true,
-   Flag = "EggSelection",
-   Callback = function(Options)
-      SelectedEggs = Options
-   end,
-})
-
--- Botão para atualizar lista de eggs
-EggsTab:CreateButton({
-   Name = "Atualizar Lista de Eggs",
-   Callback = function()
-      refreshEggList()
-      EggDropdown:Refresh(EggList)
-      Rayfield:Notify({
-         Title = "Eggs Atualizados",
-         Content = #EggList.." eggs encontrados",
-         Duration = 3,
-         Image = "refresh-cw"
-      })
-   end,
-})
-
--- Toggle para abrir eggs automaticamente
-EggsTab:CreateToggle({
-   Name = "Abrir Eggs Automaticamente",
-   CurrentValue = false,
-   Flag = "AutoOpenEggsToggle",
-   Callback = function(Value)
-      isOpeningEggs = Value
-      if Value then
-          if #SelectedEggs == 0 then
-              Rayfield:Notify({
-                  Title = "Erro",
-                  Content = "Selecione pelo menos 1 egg!",
-                  Duration = 3,
-                  Image = "alert-triangle"
-              })
-              isOpeningEggs = false
-              return
-          end
-          
-          Rayfield:Notify({
-              Title = "Auto Eggs Iniciado",
-              Content = "Abrindo "..#SelectedEggs.." eggs",
-              Duration = 3,
-              Image = "zap"
-          })
-          
-          coroutine.wrap(openEggsLoop)()
-      else
-          Rayfield:Notify({
-              Title = "Auto Eggs Parado",
-              Content = "Abertura automática desativada",
-              Duration = 3,
-              Image = "square"
-          })
-      end
-   end,
-})
-
--- Atualiza as listas inicialmente
+-- Atualiza a lista inicial
 refreshNPCList()
 NPCDropdown:Refresh(NPCList)
-refreshEggList()
-EggDropdown:Refresh(EggList)
 
 -- Aba de informações
 local InfoTab = Window:CreateTab("Informações", "info")
 
 InfoTab:CreateParagraph({
-    Title = "Instruções de Uso - Farm",
-    Content = "1. Clique em 'Atualizar Lista' para carregar os NPCs próximos\n2. Selecione os NPCs que deseja atacar\n3. Ajuste o intervalo entre ataques\n4. Ative o Farm Automático"
+    Title = "Modos de Farm Disponíveis",
+    Content = "1. FARM RÁPIDO: Teleporta entre NPCs continuamente\n2. FARM PRECISO: Teleporta apenas após matar o NPC atual"
 })
 
-InfoTab:CreateParagraph({
-    Title = "Instruções de Uso - Eggs",
-    Content = "1. Clique em 'Atualizar Lista' para carregar os eggs disponíveis\n2. Selecione os eggs que deseja abrir\n3. Ative a abertura automática"
-})
-
-InfoTab:CreateLabel("Versão 3.0 - Advanced Auto Farm")
+InfoTab:CreateLabel("Versão 4.0 - Advanced NPC Farmer")

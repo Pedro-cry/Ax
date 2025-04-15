@@ -5,7 +5,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "Annie Hub",
    LoadingTitle = "Annie Hub - Carregando...",
-   LoadingSubtitle = "Farm Específico v2.0",
+   LoadingSubtitle = "Farm Total v3.0",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "AnnieHubConfig",
@@ -17,12 +17,12 @@ local Window = Rayfield:CreateWindow({
 local NPCList = {}
 local SelectedNPCs = {}
 local isFarming = false
-local attackCooldown = 2 -- Valor padrão seguro
+local attackCooldown = 1.5 -- Valor padrão equilibrado
 
 -- Dicionário para verificação rápida
 local SelectedNPCDict = {}
 
--- Função para atualizar o dicionário de NPCs selecionados
+-- Função para atualizar o dicionário
 local function updateSelectedDict()
     SelectedNPCDict = {}
     for _, name in ipairs(SelectedNPCs) do
@@ -30,24 +30,15 @@ local function updateSelectedDict()
     end
 end
 
--- Função otimizada para verificar NPCs próximos
+-- Função para buscar NPCs próximos
 local function refreshNPCList()
     local attackables = workspace:FindFirstChild("_attackables")
     if not attackables then return end
     
-    local character = game.Players.LocalPlayer.Character
-    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
-    
-    local playerPos = rootPart.Position
     local tempList = {}
-    
     for _, npc in ipairs(attackables:GetChildren()) do
         if npc:FindFirstChild("HumanoidRootPart") then
-            local distance = (npc.HumanoidRootPart.Position - playerPos).Magnitude
-            if distance <= 200 then
-                tempList[npc.Name] = true
-            end
+            tempList[npc.Name] = true
         end
     end
     
@@ -58,81 +49,62 @@ local function refreshNPCList()
     table.sort(NPCList)
 end
 
--- Função de teleporte e ataque seguros
-local function attackSelectedNPC(npc)
-    -- Verifica se o NPC está na lista selecionada
-    if not SelectedNPCDict[npc.Name] then return false end
+-- Função para atacar TODOS os NPCs com nomes selecionados
+local function attackAllSelectedNPCs()
+    local attackables = workspace:FindFirstChild("_attackables")
+    if not attackables then return end
     
-    -- Teleporte seguro
     local char = game.Players.LocalPlayer.Character
-    if not char then return false end
+    if not char then return end
     
     local humanoidRoot = char:FindFirstChild("HumanoidRootPart")
-    if not humanoidRoot then return false end
+    if not humanoidRoot then return end
     
-    local success = pcall(function()
-        humanoidRoot.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-    end)
-    
-    if success then
-        -- ATAQUE PERSONALIZADO (substitua pelo seu método)
-        print("[FARM] Atacando: "..npc.Name)
-        -- Exemplo: ativar habilidades ou usar armas específicas
+    -- Para cada NPC no jogo
+    for _, npc in ipairs(attackables:GetChildren()) do
+        if not isFarming then break end
         
-        -- Verifica se o NPC morreu
-        local humanoid = npc:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.Health <= 0 then
-            return true -- NPC morto
+        -- Verifica se é um NPC selecionado
+        if SelectedNPCDict[npc.Name] and npc:FindFirstChild("HumanoidRootPart") then
+            -- Teleporta
+            pcall(function()
+                humanoidRoot.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            end)
+            
+            -- Ataque (SUBSTITUA pelo seu método)
+            print("[FARM] Atacando: "..npc.Name)
+            -- Exemplo: game:GetService("ReplicatedStorage").Remotes.Attack:FireServer(npc)
+            
+            -- Espera o cooldown
+            task.wait(attackCooldown)
         end
     end
-    
-    return false
 end
 
--- Loop de farm otimizado e específico
+-- Loop de farm principal
 local function farmLoop()
     while isFarming do
-        -- Atualiza a lista de selecionados
         updateSelectedDict()
-        
-        local attackables = workspace:FindFirstChild("_attackables")
-        if not attackables then
-            task.wait(1)
-            continue
-        end
-
-        -- Foca apenas nos NPCs selecionados
-        for _, npcName in ipairs(SelectedNPCs) do
-            if not isFarming then break end
-            
-            local npc = attackables:FindFirstChild(npcName)
-            if npc and npc:FindFirstChild("HumanoidRootPart") then
-                -- Ataca apenas NPCs selecionados
-                attackSelectedNPC(npc)
-                task.wait(attackCooldown)
-            end
-        end
-        
-        task.wait(0.3) -- Delay entre ciclos
+        attackAllSelectedNPCs()
+        task.wait(0.3) -- Pequeno delay entre ciclos
     end
 end
 
--- Cria a aba principal
-local MainTab = Window:CreateTab("Farm Específico", "sword")
+-- Interface
+local MainTab = Window:CreateTab("Farm Total", "sword")
 
 -- Controle principal
 MainTab:CreateToggle({
-   Name = "Ativar Farm Específico",
+   Name = "Ativar Farm Total",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
    Callback = function(Value)
       isFarming = Value
-      
       if Value then
           if #SelectedNPCs == 0 then
               Rayfield:Notify({
-                  Title = "Aviso",
-                  Content = "Selecione NPCs antes de ativar!",
+                  Title = "Erro",
+                  Content = "Selecione pelo menos 1 tipo de NPC!",
                   Duration = 3,
                   Image = "alert-triangle"
               })
@@ -142,9 +114,9 @@ MainTab:CreateToggle({
           
           updateSelectedDict()
           Rayfield:Notify({
-              Title = "Farm Específico Ativado",
-              Content = "Atacando apenas "..#SelectedNPCs.." NPCs selecionados",
-              Duration = 3,
+              Title = "Farm Total Ativado",
+              Content = "Atacando TODOS os "..table.concat(SelectedNPCs, ", "),
+              Duration = 4,
               Image = "zap"
           })
           
@@ -152,7 +124,6 @@ MainTab:CreateToggle({
       else
           Rayfield:Notify({
               Title = "Farm Desativado",
-              Content = "Interrompido pelo usuário",
               Duration = 2,
               Image = "square"
           })
@@ -162,7 +133,7 @@ MainTab:CreateToggle({
 
 -- Seletor de NPCs
 local NPCDropdown = MainTab:CreateDropdown({
-   Name = "Selecionar NPCs Alvo",
+   Name = "Tipos de NPC para Farmear",
    Options = {},
    CurrentOption = {},
    MultipleOptions = true,
@@ -175,23 +146,23 @@ local NPCDropdown = MainTab:CreateDropdown({
 
 -- Botão de atualização
 MainTab:CreateButton({
-   Name = "↻ Atualizar Lista",
+   Name = "↻ Atualizar Tipos de NPC",
    Callback = function()
       refreshNPCList()
       NPCDropdown:Refresh(NPCList)
       Rayfield:Notify({
-         Title = "NPCs Atualizados",
-         Content = #NPCList.." NPCs disponíveis na área",
-         Duration = 2,
-         Image = "refresh-cw"
+         Title = "Tipos de NPC Atualizados",
+         Content = #NPCList.." tipos encontrados no jogo",
+         Duration = 3,
+         Image = "list"
       })
    end,
 })
 
 -- Controle de velocidade
 MainTab:CreateSlider({
-   Name = "Velocidade (1-3 segundos)",
-   Range = {1, 3},
+   Name = "Delay entre Ataques",
+   Range = {0.5, 3},
    Increment = 0.1,
    Suffix = "segundos",
    CurrentValue = attackCooldown,
@@ -201,19 +172,7 @@ MainTab:CreateSlider({
    end,
 })
 
--- Atualizações iniciais
+-- Inicialização
 refreshNPCList()
 NPCDropdown:Refresh(NPCList)
-
--- Aba de informações
-local InfoTab = Window:CreateTab("Configurações", "settings")
-
-InfoTab:CreateParagraph({
-    Title = "Como Usar:",
-    Content = "1. Atualize a lista\n2. Selecione os NPCs\n3. Ajuste a velocidade\n4. Ative o Farm"
-})
-
-InfoTab:CreateLabel("Farm Específico v2.0 - Annie Hub")
-
--- Inicializa
 Rayfield:LoadConfiguration()

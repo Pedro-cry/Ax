@@ -3,12 +3,12 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Cria a janela principal
 local Window = Rayfield:CreateWindow({
-   Name = "Advanced NPC Farmer",
-   LoadingTitle = "Carregando Sistema de Farm...",
-   LoadingSubtitle = "Versão 4.0",
+   Name = "Annie Hub",
+   LoadingTitle = "Annie Hub - Carregando...",
+   LoadingSubtitle = "Sistema de Farm Premium",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "NPCFarmerConfig",
+      FolderName = "AnnieHubConfig",
       FileName = "Settings"
    }
 })
@@ -85,17 +85,40 @@ end
 local function fastFarmLoop()
     while isFarming and #SelectedNPCs > 0 do
         local attackables = workspace:FindFirstChild("_attackables")
-        if not attackables then break end
+        local character = game.Players.LocalPlayer.Character
+        local humanoidRoot = character and character:FindFirstChild("HumanoidRootPart")
         
+        if not attackables or not humanoidRoot then
+            task.wait(1)
+            continue
+        end
+
         for _, npcName in ipairs(SelectedNPCs) do
             if not isFarming then break end
             
             local npc = attackables:FindFirstChild(npcName)
             if npc and npc:FindFirstChild("HumanoidRootPart") then
                 currentTarget = npc
-                teleportToNPC(npc)
-                attackNPC(npc)
-                task.wait(attackCooldown)
+                
+                -- Sistema de tentativas seguro
+                local attempts = 0
+                local success = false
+                
+                repeat
+                    if not isFarming or attempts >= 5 then break end
+                    
+                    -- Teleporte protegido contra erros
+                    pcall(function()
+                        humanoidRoot.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                        success = true
+                    end)
+                    
+                    -- Ataque protegido contra erros
+                    pcall(attackNPC, npc)
+                    
+                    attempts += 1
+                    task.wait(attackCooldown)
+                until success or not isFarming
             end
         end
     end
@@ -106,8 +129,14 @@ end
 local function onKillFarmLoop()
     while isFarming and #SelectedNPCs > 0 do
         local attackables = workspace:FindFirstChild("_attackables")
-        if not attackables then break end
+        local character = game.Players.LocalPlayer.Character
+        local humanoidRoot = character and character:FindFirstChild("HumanoidRootPart")
         
+        if not attackables or not humanoidRoot then
+            task.wait(1)
+            continue
+        end
+
         for _, npcName in ipairs(SelectedNPCs) do
             if not isFarming then break end
             
@@ -117,11 +146,11 @@ local function onKillFarmLoop()
                 
                 -- Teleporta apenas se o NPC não estiver morto
                 if not isNPCDead(npc) then
-                    if teleportToNPC(npc) then
+                    if pcall(teleportToNPC, npc) then
                         -- Ataca até o NPC morrer
                         repeat
                             if not isFarming then break end
-                            local npcDied = attackNPC(npc)
+                            local npcDied = pcall(attackNPC, npc)
                             task.wait(attackCooldown)
                         until npcDied or not npc.Parent or isNPCDead(npc)
                     end
@@ -245,7 +274,7 @@ MainTab:CreateButton({
 -- Controle de velocidade de ataque
 MainTab:CreateSlider({
    Name = "Velocidade de Ataque",
-   Range = {0.1, 2},
+   Range = {0.2, 1.5},
    Increment = 0.1,
    Suffix = "segundos",
    CurrentValue = attackCooldown,
@@ -267,4 +296,7 @@ InfoTab:CreateParagraph({
     Content = "1. FARM RÁPIDO: Teleporta entre NPCs continuamente\n2. FARM PRECISO: Teleporta apenas após matar o NPC atual"
 })
 
-InfoTab:CreateLabel("Versão 4.0 - Advanced NPC Farmer")
+InfoTab:CreateLabel("Annie Hub v4.0 - Sistema de Farm Automático")
+
+-- Inicializa a GUI
+Rayfield:LoadConfiguration()

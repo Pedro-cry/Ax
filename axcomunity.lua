@@ -7,7 +7,7 @@ local Window = Rayfield:CreateWindow({
    LoadingTitle = "Annie Hub - Carregando...",
    LoadingSubtitle = "Farm Total v3.0",
    ConfigurationSaving = {
-      Enabled = true,
+      Enabled = false,
       FolderName = "AnnieHubConfig",
       FileName = "Settings"
    }
